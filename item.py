@@ -14,7 +14,7 @@ class Item(Resource):
         help="This field cannot be left blank!"
     )
     parser.add_argument('expiry_date',
-        type=int,
+        type=str,
         required=True,
         help="This field cannot be left blank!"
     )
@@ -24,7 +24,7 @@ class Item(Resource):
         help="This field cannot be left blank!"
     )
     parser.add_argument('manufacturing_date',
-        type=int,
+        type=str,
         required=True,
         help="This field cannot be left blank!"
     )
@@ -48,8 +48,26 @@ class Item(Resource):
     def get(self, name):
         item = self.find_by_name(name)
         if item:
-            return item
+            return expired(item)
         return {'message': 'Item not found'}, 404
+
+
+    @classmethod
+    def expired(cls, item):
+        connection = sqlite3.connect('data.db')
+        cursor = connection.cursor()
+
+        query = "SELECT * FROM {table} WHERE name=?".format(table=cls.TABLE_NAME)
+        result = cursor.execute(query, (name,))
+        row = result.fetchone()
+        date = row[2]
+        current_time = datetime.now()
+
+        if date<=current_time:
+            query = "UPDATE {table} SET expired=TRUE WHERE name=?".format(table=cls.TABLE_NAME)
+            cursor.execute(query, (item['expired'], item['name']))
+            return {'message':'product expired' }
+        return item
 
 
     @classmethod
@@ -88,7 +106,8 @@ class Item(Resource):
             'quantity': data['quantity'],
             'manufacturing_date': data['manufacturing_date'],
             'id': data['id'],
-            'image': data['image']
+            'image': data['image'],
+            'status': data['status']
         }
 
         try:
@@ -163,7 +182,7 @@ class ItemList(Resource):
         result = cursor.execute(query)
         items = []
         for row in result:
-            items.append({'name': row[0], 'category': row[1],'expiry_date': row[2], 'quantity': row[3], 'manufacturing_date': row[4], 'id': row[5], 'image': row[6], 'status': row[7]})
+            items.append({'name': row[0], 'category': row[1],'expiry_date':datetime.strptime(row[2],"%d/%m/%y"), 'quantity': row[3], 'manufacturing_time':datetime.strptime(row[4],"%d/%m/%y"), 'id': row[5], 'image': row[6], 'status': row[7]})
         connection.close()
 
         return {'items': items}
