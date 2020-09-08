@@ -8,7 +8,7 @@ from item import Item, ItemList
 
 app = Flask(__name__)
 app.config['PROPAGATE_EXCEPTIONS'] = True
-app.secret_key = 'jose'
+app.secret_key = 'appu'
 api = Api(app)
 
 jwt = JWT(app, authenticate, identity)
@@ -18,4 +18,4 @@ api.add_resource(ItemList, '/items')
 api.add_resource(UserRegister, '/register')
 
 if __name__ == '__main__':
-    app.run(debug=True)  # important to mention debug=True
+    app.run(port=5000, debug=True)  # important to mention debug=True
